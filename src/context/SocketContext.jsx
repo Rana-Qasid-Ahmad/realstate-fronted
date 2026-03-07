@@ -46,7 +46,7 @@ export function SocketProvider({ children }) {
     // Connect to the socket server
     const newSocket = io(import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000', {
       auth: { token },             // Send the token so the server can identify us
-      transports: ['websocket'],   // Use WebSocket transport (faster than polling)
+      transports: ['websocket', 'polling'],   // Use WebSocket transport (faster than polling)
     });
 
     newSocket.on('connect', () => {
