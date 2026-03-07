@@ -8,7 +8,7 @@ import toast from 'react-hot-toast';
 export default function VerifyEmail() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { loginWithToken } = useAuth();
 
   const { userId, email } = location.state || {};
 
@@ -73,7 +73,7 @@ export default function VerifyEmail() {
     try {
       const res = await api.post('/auth/verify-email', { userId, code: finalCode });
       setVerified(true);
-      login(res.data.user, res.data.token);
+      loginWithToken(res.data.user, res.data.token);
       toast.success('Email verified! Welcome to RealVista 🎉');
       setTimeout(() => navigate('/'), 1500);
     } catch (err) {

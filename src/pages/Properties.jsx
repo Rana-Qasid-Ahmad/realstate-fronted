@@ -3,8 +3,9 @@ import { useSearchParams } from 'react-router-dom';
 import api from '../utils/api';
 import PropertyCard from '../components/PropertyCard';
 import SearchFilter from '../components/SearchFilter';
+import { PropertyCardSkeleton } from '../components/Skeleton';
 import { useAuth } from '../context/AuthContext';
-import { ChevronLeft, ChevronRight, Home } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Home, SlidersHorizontal } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export default function Properties() {
@@ -84,7 +85,7 @@ export default function Properties() {
         {/* Grid */}
         {loading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[...Array(9)].map((_, i) => <div key={i} className="h-80 bg-gray-200 rounded-2xl animate-pulse" />)}
+            {[...Array(9)].map((_, i) => <PropertyCardSkeleton key={i} />)}
           </div>
         ) : properties.length > 0 ? (
           <>

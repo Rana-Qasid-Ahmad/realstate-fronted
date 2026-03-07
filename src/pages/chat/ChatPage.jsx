@@ -8,7 +8,7 @@ import { useSocket } from '../../context/SocketContext';
 export default function ChatPage() {
   const { id } = useParams();
   const { user } = useAuth();
-  const { socket, fetchUnreadCount } = useSocket();
+  const { socket, fetchUnreadCount, isOnline } = useSocket();
   const [messages, setMessages] = useState([]);
   const [conversation, setConversation] = useState(null);
   const [text, setText] = useState('');
@@ -129,11 +129,11 @@ export default function ChatPage() {
                 <div className="w-8 h-8 bg-gradient-to-br from-primary-500 to-primary-700 rounded-full flex items-center justify-center text-white font-bold text-sm">
                   {other.name?.charAt(0).toUpperCase()}
                 </div>
-                <span className="absolute bottom-0 right-0 w-2 h-2 bg-emerald-400 border-2 border-white rounded-full" />
+                <span className={`absolute bottom-0 right-0 w-2 h-2 border-2 border-white rounded-full ${isOnline(other?._id) ? 'bg-emerald-400' : 'bg-gray-300'}`} />
               </div>
               <div className="min-w-0">
                 <p className="font-semibold text-gray-900 text-sm truncate leading-tight">{other.name}</p>
-                <p className="text-xs text-emerald-500">Online</p>
+                <p className="text-xs text-emerald-500">{isOnline(other?._id) ? 'Online' : 'Offline'}</p>
               </div>
             </div>
           )}

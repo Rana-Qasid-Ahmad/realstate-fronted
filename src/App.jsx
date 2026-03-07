@@ -14,6 +14,9 @@ import AgentDetail from './pages/AgentDetail';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import VerifyEmail from './pages/VerifyEmail';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
+import NotFound from './pages/NotFound';
 
 import AgentDashboard from './pages/dashboard/AgentDashboard';
 import AddProperty from './pages/dashboard/AddProperty';
@@ -30,8 +33,8 @@ import ChatPage from './pages/chat/ChatPage';
 
 const ProtectedRoute = ({ children, role }) => {
   const { user } = useAuth();
-  if (!user) return <Navigate to="/login" />;
-  if (role && user.role !== role && !(role === 'agent' && user.role === 'admin')) return <Navigate to="/" />;
+  if (!user) return <Navigate to="/login" replace />;
+  if (role && user.role !== role && !(role === 'agent' && user.role === 'admin')) return <Navigate to="/" replace />;
   return children;
 };
 
@@ -42,7 +45,7 @@ function AppRoutes() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="flex flex-col items-center gap-3">
-          <div className="w-10 h-10 border-4 border-primary-600 border-t-transparent rounded-full animate-spin"></div>
+          <div className="w-10 h-10 border-4 border-primary-600 border-t-transparent rounded-full animate-spin" />
           <p className="text-sm text-gray-400">Loading...</p>
         </div>
       </div>
@@ -54,6 +57,7 @@ function AppRoutes() {
       <Navbar />
       <main className="flex-1">
         <Routes>
+          {/* Public */}
           <Route path="/" element={<Home />} />
           <Route path="/properties" element={<Properties />} />
           <Route path="/properties/:id" element={<PropertyDetail />} />
@@ -62,24 +66,27 @@ function AppRoutes() {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/verify-email" element={<VerifyEmail />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
 
-          {/* Agent routes */}
+          {/* Protected — any logged in user */}
+          <Route path="/saved" element={<ProtectedRoute><SavedProperties /></ProtectedRoute>} />
+          <Route path="/inbox" element={<ProtectedRoute><Inbox /></ProtectedRoute>} />
+          <Route path="/chat/:id" element={<ProtectedRoute><ChatPage /></ProtectedRoute>} />
+
+          {/* Agent */}
           <Route path="/dashboard" element={<ProtectedRoute role="agent"><AgentDashboard /></ProtectedRoute>} />
           <Route path="/dashboard/add" element={<ProtectedRoute role="agent"><AddProperty /></ProtectedRoute>} />
           <Route path="/dashboard/edit/:id" element={<ProtectedRoute role="agent"><EditProperty /></ProtectedRoute>} />
           <Route path="/dashboard/inquiries" element={<ProtectedRoute role="agent"><AgentInquiries /></ProtectedRoute>} />
-          <Route path="/saved" element={<ProtectedRoute><SavedProperties /></ProtectedRoute>} />
 
-          {/* Chat routes */}
-          <Route path="/inbox" element={<ProtectedRoute><Inbox /></ProtectedRoute>} />
-          <Route path="/chat/:id" element={<ProtectedRoute><ChatPage /></ProtectedRoute>} />
-
-          {/* Admin routes */}
+          {/* Admin */}
           <Route path="/admin" element={<ProtectedRoute role="admin"><AdminDashboard /></ProtectedRoute>} />
           <Route path="/admin/properties" element={<ProtectedRoute role="admin"><AdminProperties /></ProtectedRoute>} />
           <Route path="/admin/users" element={<ProtectedRoute role="admin"><AdminUsers /></ProtectedRoute>} />
 
-          <Route path="*" element={<Navigate to="/" />} />
+          {/* 404 */}
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </main>
       <Footer />
@@ -92,7 +99,14 @@ export default function App() {
     <BrowserRouter>
       <AuthProvider>
         <SocketProvider>
-          <Toaster position="top-right" toastOptions={{ duration: 3000 }} />
+          <Toaster
+            position="top-right"
+            toastOptions={{
+              duration: 3000,
+              style: { fontSize: '14px', borderRadius: '12px' },
+              success: { iconTheme: { primary: '#2563eb', secondary: '#fff' } },
+            }}
+          />
           <AppRoutes />
         </SocketProvider>
       </AuthProvider>
