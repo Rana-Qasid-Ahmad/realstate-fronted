@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useSocket } from '../context/SocketContext';
@@ -11,6 +11,24 @@ export default function Navbar() {
   const location = useLocation();
   const [open, setOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const dropdownRef = useRef(null);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(e) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setDropdownOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Close mobile menu on route change
+  useEffect(() => {
+    setOpen(false);
+    setDropdownOpen(false);
+  }, [location.pathname]);
 
   const handleLogout = () => { logout(); navigate('/'); };
   const isActive = (path) => location.pathname === path;
@@ -46,7 +64,6 @@ export default function Navbar() {
           <div className="hidden md:flex items-center gap-3">
             {user ? (
               <>
-                {/* Inbox icon with badge */}
                 <Link to="/inbox" className="relative p-2 rounded-lg hover:bg-gray-50 transition-colors">
                   <MessageSquare size={20} className="text-gray-600" />
                   {unreadCount > 0 && (
@@ -56,11 +73,18 @@ export default function Navbar() {
                   )}
                 </Link>
 
-                <div className="relative">
-                  <button onClick={() => setDropdownOpen(!dropdownOpen)} className="flex items-center gap-2 hover:bg-gray-50 px-3 py-2 rounded-lg transition-colors">
-                    <div className="w-8 h-8 bg-primary-100 rounded-full flex items-center justify-center text-primary-700 font-semibold text-sm">
-                      {user.name?.charAt(0).toUpperCase()}
-                    </div>
+                <div className="relative" ref={dropdownRef}>
+                  <button
+                    onClick={() => setDropdownOpen(!dropdownOpen)}
+                    className="flex items-center gap-2 hover:bg-gray-50 px-3 py-2 rounded-lg transition-colors"
+                  >
+                    {user.avatar ? (
+                      <img src={user.avatar} alt={user.name} className="w-8 h-8 rounded-full object-cover" />
+                    ) : (
+                      <div className="w-8 h-8 bg-primary-100 rounded-full flex items-center justify-center text-primary-700 font-semibold text-sm">
+                        {user.name?.charAt(0).toUpperCase()}
+                      </div>
+                    )}
                     <span className="text-sm font-medium text-gray-700">{user.name?.split(' ')[0]}</span>
                   </button>
                   {dropdownOpen && (
@@ -71,7 +95,7 @@ export default function Navbar() {
                         <span className="text-xs bg-primary-100 text-primary-700 px-2 py-0.5 rounded-full capitalize">{user.role}</span>
                       </div>
                       {user.role === 'admin' && <Link to="/admin" onClick={() => setDropdownOpen(false)} className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"><Shield size={14} />Admin Panel</Link>}
-                      {user.role === 'agent' && <Link to="/dashboard" onClick={() => setDropdownOpen(false)} className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"><LayoutDashboard size={14} />Dashboard</Link>}
+                      {(user.role === 'agent' || user.role === 'admin') && <Link to="/dashboard" onClick={() => setDropdownOpen(false)} className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"><LayoutDashboard size={14} />Dashboard</Link>}
                       <Link to="/inbox" onClick={() => setDropdownOpen(false)} className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
                         <MessageSquare size={14} />Messages
                         {unreadCount > 0 && <span className="ml-auto bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full">{unreadCount}</span>}
@@ -101,24 +125,25 @@ export default function Navbar() {
       {open && (
         <div className="md:hidden border-t border-gray-100 bg-white px-4 py-4 space-y-2">
           {navLinks.map(({ to, label, icon: Icon }) => (
-            <Link key={to} to={to} onClick={() => setOpen(false)} className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium ${isActive(to) ? 'bg-primary-50 text-primary-600' : 'text-gray-700'}`}>
+            <Link key={to} to={to} className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium ${isActive(to) ? 'bg-primary-50 text-primary-600' : 'text-gray-700'}`}>
               <Icon size={16} />{label}
             </Link>
           ))}
           {user ? (
             <>
-              <Link to="/inbox" onClick={() => setOpen(false)} className="flex items-center gap-2 px-3 py-2 text-sm text-gray-700">
+              <Link to="/inbox" className="flex items-center gap-2 px-3 py-2 text-sm text-gray-700">
                 <MessageSquare size={16} />Messages
                 {unreadCount > 0 && <span className="bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full">{unreadCount}</span>}
               </Link>
-              {user.role === 'agent' && <Link to="/dashboard" onClick={() => setOpen(false)} className="flex items-center gap-2 px-3 py-2 text-sm text-gray-700"><LayoutDashboard size={16} />Dashboard</Link>}
-              {user.role === 'admin' && <Link to="/admin" onClick={() => setOpen(false)} className="flex items-center gap-2 px-3 py-2 text-sm text-gray-700"><Shield size={16} />Admin</Link>}
-              <button onClick={() => { handleLogout(); setOpen(false); }} className="flex items-center gap-2 px-3 py-2 text-sm text-red-600 w-full"><LogOut size={16} />Logout</button>
+              {(user.role === 'agent' || user.role === 'admin') && <Link to="/dashboard" className="flex items-center gap-2 px-3 py-2 text-sm text-gray-700"><LayoutDashboard size={16} />Dashboard</Link>}
+              {user.role === 'admin' && <Link to="/admin" className="flex items-center gap-2 px-3 py-2 text-sm text-gray-700"><Shield size={16} />Admin</Link>}
+              <Link to="/saved" className="flex items-center gap-2 px-3 py-2 text-sm text-gray-700"><Heart size={16} />Saved</Link>
+              <button onClick={() => { handleLogout(); }} className="flex items-center gap-2 px-3 py-2 text-sm text-red-600 w-full"><LogOut size={16} />Logout</button>
             </>
           ) : (
             <div className="flex gap-2 pt-2">
-              <Link to="/login" onClick={() => setOpen(false)} className="flex-1 text-center btn-outline text-sm py-2">Login</Link>
-              <Link to="/register" onClick={() => setOpen(false)} className="flex-1 text-center btn-primary text-sm py-2">Register</Link>
+              <Link to="/login" className="flex-1 text-center btn-outline text-sm py-2">Login</Link>
+              <Link to="/register" className="flex-1 text-center btn-primary text-sm py-2">Register</Link>
             </div>
           )}
         </div>

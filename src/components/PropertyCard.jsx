@@ -9,15 +9,28 @@ export default function PropertyCard({ property, saved, onSave }) {
     <div className="card group">
       {/* Image */}
       <div className="relative overflow-hidden h-52">
-        <img src={img} alt={property.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+        <img
+          src={img}
+          alt={property.title}
+          loading="lazy"
+          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+        />
         <div className="absolute top-3 left-3 flex gap-2">
           <span className={`badge ${property.status === 'sale' ? 'bg-primary-600 text-white' : 'bg-emerald-500 text-white'}`}>
             For {property.status === 'sale' ? 'Sale' : 'Rent'}
           </span>
-          {property.isFeatured && <span className="badge bg-amber-400 text-amber-900 flex items-center gap-1"><Star size={10} />Featured</span>}
+          {property.isFeatured && (
+            <span className="badge bg-amber-400 text-amber-900 flex items-center gap-1">
+              <Star size={10} />Featured
+            </span>
+          )}
         </div>
         {onSave && (
-          <button onClick={(e) => { e.preventDefault(); onSave(property._id); }} className={`absolute top-3 right-3 w-9 h-9 rounded-full flex items-center justify-center transition-colors shadow-md ${saved ? 'bg-primary-600 text-white' : 'bg-white text-gray-400 hover:text-primary-600'}`}>
+          <button
+            onClick={(e) => { e.preventDefault(); onSave(property._id); }}
+            className={`absolute top-3 right-3 w-9 h-9 rounded-full flex items-center justify-center transition-colors shadow-md ${saved ? 'bg-primary-600 text-white' : 'bg-white text-gray-400 hover:text-primary-600'}`}
+            aria-label={saved ? 'Remove from saved' : 'Save property'}
+          >
             <Heart size={16} fill={saved ? 'currentColor' : 'none'} />
           </button>
         )}
@@ -27,10 +40,10 @@ export default function PropertyCard({ property, saved, onSave }) {
       </div>
 
       {/* Content */}
-      <div className="p-5">
-        <div className="flex items-start justify-between mb-2">
-          <h3 className="font-display font-semibold text-gray-900 text-base leading-tight line-clamp-2 flex-1">{property.title}</h3>
-        </div>
+      <Link to={`/properties/${property._id}`} className="block p-5">
+        <h3 className="font-display font-semibold text-gray-900 text-base leading-tight line-clamp-2 mb-2">
+          {property.title}
+        </h3>
 
         <div className="flex items-center gap-1 text-gray-500 text-sm mb-3">
           <MapPin size={13} className="text-primary-500 shrink-0" />
@@ -43,9 +56,9 @@ export default function PropertyCard({ property, saved, onSave }) {
           {property.bedrooms > 0 && <span className="flex items-center gap-1"><Bed size={14} />{property.bedrooms} Bed</span>}
           {property.bathrooms > 0 && <span className="flex items-center gap-1"><Bath size={14} />{property.bathrooms} Bath</span>}
           <span className="flex items-center gap-1"><Maximize size={14} />{property.area?.toLocaleString()} sqft</span>
-          <Link to={`/properties/${property._id}`} className="ml-auto text-xs font-semibold text-primary-600 hover:underline">View Details →</Link>
+          <span className="ml-auto text-xs font-semibold text-primary-600">View Details →</span>
         </div>
-      </div>
+      </Link>
     </div>
   );
 }

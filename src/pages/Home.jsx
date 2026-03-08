@@ -9,12 +9,23 @@ import { CITIES } from '../utils/helpers';
 export default function Home() {
   const [featured, setFeatured] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState({ totalProperties: '2,500+', totalAgents: '150+' });
   const navigate = useNavigate();
 
   useEffect(() => {
-    api.get('/properties?featured=true&limit=6')
-      .then(res => setFeatured(res.data.properties))
-      .catch(() => {})
+    // Fetch featured properties and real stats in parallel
+    Promise.all([
+      api.get('/properties?featured=true&limit=6'),
+      api.get('/properties/stats/public').catch(() => null),
+    ]).then(([propRes, statsRes]) => {
+      setFeatured(propRes.data.properties);
+      if (statsRes) {
+        setStats(prev => ({
+          ...prev,
+          totalProperties: (statsRes.data.totalProperties || 0).toLocaleString() + '+',
+        }));
+      }
+    }).catch(() => {})
       .finally(() => setLoading(false));
   }, []);
 
@@ -24,7 +35,13 @@ export default function Home() {
     navigate(`/properties?${params.toString()}`);
   };
 
-  const stats = [{ label: 'Properties Listed', value: '2,500+' }, { label: 'Happy Clients', value: '1,200+' }, { label: 'Expert Agents', value: '150+' }, { label: 'Cities Covered', value: '25+' }];
+  const displayStats = [
+    { label: 'Properties Listed', value: stats.totalProperties },
+    { label: 'Happy Clients', value: '1,200+' },
+    { label: 'Expert Agents', value: stats.totalAgents },
+    { label: 'Cities Covered', value: '25+' },
+  ];
+
   const whys = [
     { icon: Search, title: 'Smart Search', desc: 'Advanced filters to find exactly what you need, fast.' },
     { icon: Shield, title: 'Verified Listings', desc: 'Every property is reviewed and approved by our team.' },
@@ -47,10 +64,7 @@ export default function Home() {
             </h1>
             <p className="text-gray-300 text-xl leading-relaxed">Discover thousands of properties across Pakistan. Buy, rent, or list your property with confidence.</p>
           </div>
-
           <SearchFilter onSearch={handleSearch} />
-
-          {/* Quick city links */}
           <div className="mt-6 flex flex-wrap gap-2">
             <span className="text-gray-400 text-sm">Popular Cities:</span>
             {CITIES.slice(0, 6).map(city => (
@@ -64,7 +78,7 @@ export default function Home() {
       <section className="bg-primary-600 py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center text-white">
-            {stats.map(s => (
+            {displayStats.map(s => (
               <div key={s.label}>
                 <div className="text-3xl sm:text-4xl font-display font-bold mb-1">{s.value}</div>
                 <div className="text-primary-100 text-sm">{s.label}</div>

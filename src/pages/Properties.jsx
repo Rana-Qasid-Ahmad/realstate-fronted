@@ -5,8 +5,16 @@ import PropertyCard from '../components/PropertyCard';
 import SearchFilter from '../components/SearchFilter';
 import { PropertyCardSkeleton } from '../components/Skeleton';
 import { useAuth } from '../context/AuthContext';
-import { ChevronLeft, ChevronRight, Home, SlidersHorizontal } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Home, ArrowUpDown } from 'lucide-react';
 import toast from 'react-hot-toast';
+
+const SORT_OPTIONS = [
+  { value: 'newest', label: 'Newest First' },
+  { value: 'oldest', label: 'Oldest First' },
+  { value: 'price_asc', label: 'Price: Low to High' },
+  { value: 'price_desc', label: 'Price: High to Low' },
+  { value: 'popular', label: 'Most Viewed' },
+];
 
 export default function Properties() {
   const { user } = useAuth();
@@ -17,10 +25,11 @@ export default function Properties() {
   const [savedIds, setSavedIds] = useState(user?.savedProperties || []);
 
   const currentPage = parseInt(searchParams.get('page') || '1');
+  const currentSort = searchParams.get('sort') || 'newest';
 
   const buildFilters = () => {
     const filters = {};
-    ['search', 'city', 'type', 'status', 'minPrice', 'maxPrice', 'bedrooms'].forEach(k => {
+    ['search', 'city', 'type', 'status', 'minPrice', 'maxPrice', 'bedrooms', 'sort'].forEach(k => {
       const v = searchParams.get(k);
       if (v) filters[k] = v;
     });
@@ -31,7 +40,10 @@ export default function Properties() {
     setLoading(true);
     const params = { ...buildFilters(), page: currentPage, limit: 9 };
     api.get('/properties', { params })
-      .then(res => { setProperties(res.data.properties); setPagination({ total: res.data.total, pages: res.data.pages, currentPage: res.data.currentPage }); })
+      .then(res => {
+        setProperties(res.data.properties);
+        setPagination({ total: res.data.total, pages: res.data.pages, currentPage: res.data.currentPage });
+      })
       .catch(() => toast.error('Failed to load properties'))
       .finally(() => setLoading(false));
   }, [searchParams]);
@@ -39,6 +51,14 @@ export default function Properties() {
   const handleSearch = (filters) => {
     const params = new URLSearchParams();
     Object.entries(filters).forEach(([k, v]) => { if (v) params.set(k, v); });
+    params.set('page', '1');
+    if (currentSort !== 'newest') params.set('sort', currentSort);
+    setSearchParams(params);
+  };
+
+  const handleSort = (sort) => {
+    const params = new URLSearchParams(searchParams);
+    params.set('sort', sort);
     params.set('page', '1');
     setSearchParams(params);
   };
@@ -56,7 +76,21 @@ export default function Properties() {
     const params = new URLSearchParams(searchParams);
     params.set('page', page);
     setSearchParams(params);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    // ScrollToTop component handles this automatically
+  };
+
+  // Build page numbers with ellipsis for large page counts
+  const getPageNumbers = () => {
+    const total = pagination.pages;
+    const current = currentPage;
+    if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
+    const pages = [];
+    pages.push(1);
+    if (current > 3) pages.push('...');
+    for (let i = Math.max(2, current - 1); i <= Math.min(total - 1, current + 1); i++) pages.push(i);
+    if (current < total - 2) pages.push('...');
+    pages.push(total);
+    return pages;
   };
 
   return (
@@ -75,11 +109,21 @@ export default function Properties() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Results count */}
+        {/* Results count + sort */}
         <div className="flex items-center justify-between mb-6">
           <p className="text-gray-500 text-sm">
             {loading ? 'Loading...' : <><span className="font-semibold text-gray-900">{pagination.total}</span> properties found</>}
           </p>
+          <div className="flex items-center gap-2">
+            <ArrowUpDown size={14} className="text-gray-400" />
+            <select
+              value={currentSort}
+              onChange={e => handleSort(e.target.value)}
+              className="text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white"
+            >
+              {SORT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+            </select>
+          </div>
         </div>
 
         {/* Grid */}
@@ -91,7 +135,7 @@ export default function Properties() {
           <>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {properties.map(p => (
-                <PropertyCard key={p._id} property={p} saved={savedIds.includes(p._id)} onSave={handleSave} />
+                <PropertyCard key={p._id} property={p} saved={savedIds.map(String).includes(String(p._id))} onSave={handleSave} />
               ))}
             </div>
 
@@ -101,11 +145,11 @@ export default function Properties() {
                 <button onClick={() => goToPage(currentPage - 1)} disabled={currentPage === 1} className="w-10 h-10 rounded-lg border border-gray-200 flex items-center justify-center hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed">
                   <ChevronLeft size={16} />
                 </button>
-                {[...Array(pagination.pages)].map((_, i) => (
-                  <button key={i} onClick={() => goToPage(i + 1)} className={`w-10 h-10 rounded-lg text-sm font-medium transition-colors ${currentPage === i + 1 ? 'bg-primary-600 text-white' : 'border border-gray-200 hover:bg-gray-50'}`}>
-                    {i + 1}
-                  </button>
-                ))}
+                {getPageNumbers().map((p, i) =>
+                  p === '...'
+                    ? <span key={`e${i}`} className="w-10 h-10 flex items-center justify-center text-gray-400">…</span>
+                    : <button key={p} onClick={() => goToPage(p)} className={`w-10 h-10 rounded-lg text-sm font-medium transition-colors ${currentPage === p ? 'bg-primary-600 text-white' : 'border border-gray-200 hover:bg-gray-50'}`}>{p}</button>
+                )}
                 <button onClick={() => goToPage(currentPage + 1)} disabled={currentPage === pagination.pages} className="w-10 h-10 rounded-lg border border-gray-200 flex items-center justify-center hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed">
                   <ChevronRight size={16} />
                 </button>

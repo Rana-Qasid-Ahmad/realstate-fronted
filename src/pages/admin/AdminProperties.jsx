@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { CheckCircle, Star, Trash2, Eye, XCircle, Filter } from 'lucide-react';
+import { CheckCircle, Star, Trash2, Eye, XCircle, Filter, ChevronLeft, ChevronRight } from 'lucide-react';
 import api from '../../utils/api';
 import { formatPrice, timeAgo } from '../../utils/helpers';
 import { TableRowSkeleton } from '../../components/Skeleton';
@@ -14,20 +14,26 @@ export default function AdminProperties() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [pagination, setPagination] = useState({ total: 0, pages: 1, currentPage: 1 });
 
-  useEffect(() => {
+  const fetchProperties = useCallback((page = 1) => {
     setLoading(true);
-    api.get('/admin/properties', { params: { filter } })
-      .then(res => setProperties(res.data))
+    api.get('/admin/properties', { params: { filter, page, limit: 20 } })
+      .then(res => {
+        setProperties(res.data.properties);
+        setPagination({ total: res.data.total, pages: res.data.pages, currentPage: res.data.currentPage });
+      })
       .catch(() => toast.error('Failed to load properties'))
       .finally(() => setLoading(false));
   }, [filter]);
+
+  useEffect(() => { fetchProperties(1); }, [fetchProperties]);
 
   const approve = async (id) => {
     try {
       await api.put(`/admin/properties/${id}/approve`);
       setProperties(prev => prev.map(p => p._id === id ? { ...p, isApproved: true } : p));
-      toast.success('Property approved and live!');
+      toast.success('Property approved and live! Agent notified by email.');
     } catch { toast.error('Failed to approve'); }
   };
 
@@ -35,7 +41,7 @@ export default function AdminProperties() {
     try {
       await api.put(`/admin/properties/${id}/disapprove`);
       setProperties(prev => prev.map(p => p._id === id ? { ...p, isApproved: false, isFeatured: false } : p));
-      toast.success('Property unpublished');
+      toast.success('Property unpublished. Agent notified by email.');
     } catch { toast.error('Failed to disapprove'); }
   };
 
@@ -59,18 +65,16 @@ export default function AdminProperties() {
   return (
     <div className="page-enter bg-gray-50 min-h-screen">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-
         <div className="flex items-center justify-between mb-6">
           <h1 className="font-display text-2xl sm:text-3xl font-bold text-gray-900">Properties</h1>
-          <span className="text-sm text-gray-500">{properties.length} results</span>
+          <span className="text-sm text-gray-500">{pagination.total} total</span>
         </div>
 
         {/* Filter tabs */}
         <div className="flex gap-2 mb-6 overflow-x-auto pb-1">
           {FILTERS.map(f => (
             <button key={f} onClick={() => setFilter(f)}
-              className={`px-4 py-2 rounded-xl text-sm font-medium capitalize whitespace-nowrap transition-colors
-                ${filter === f ? 'bg-primary-600 text-white' : 'bg-white border border-gray-200 text-gray-600 hover:border-primary-300'}`}>
+              className={`px-4 py-2 rounded-xl text-sm font-medium capitalize whitespace-nowrap transition-colors ${filter === f ? 'bg-primary-600 text-white' : 'bg-white border border-gray-200 text-gray-600 hover:border-primary-300'}`}>
               {f}
             </button>
           ))}
@@ -101,7 +105,7 @@ export default function AdminProperties() {
                     <tr key={p._id} className="hover:bg-gray-50 transition-colors">
                       <td className="px-6 py-4">
                         <p className="font-medium text-gray-900 line-clamp-1">{p.title}</p>
-                        <p className="text-xs text-gray-400">{p.location?.city} · {p.type}</p>
+                        <p className="text-xs text-gray-400">{p.location?.city} · {p.type} · {timeAgo(p.createdAt)}</p>
                       </td>
                       <td className="px-6 py-4 text-gray-600 text-xs">
                         <p className="font-medium text-sm">{p.agent?.name}</p>
@@ -150,6 +154,21 @@ export default function AdminProperties() {
                   ))}
                 </tbody>
               </table>
+
+              {/* Pagination */}
+              {pagination.pages > 1 && (
+                <div className="flex items-center justify-between px-6 py-4 border-t border-gray-100">
+                  <p className="text-xs text-gray-500">Page {pagination.currentPage} of {pagination.pages}</p>
+                  <div className="flex gap-2">
+                    <button onClick={() => fetchProperties(pagination.currentPage - 1)} disabled={pagination.currentPage === 1} className="w-8 h-8 rounded-lg border border-gray-200 flex items-center justify-center hover:bg-gray-50 disabled:opacity-40">
+                      <ChevronLeft size={14} />
+                    </button>
+                    <button onClick={() => fetchProperties(pagination.currentPage + 1)} disabled={pagination.currentPage === pagination.pages} className="w-8 h-8 rounded-lg border border-gray-200 flex items-center justify-center hover:bg-gray-50 disabled:opacity-40">
+                      <ChevronRight size={14} />
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>

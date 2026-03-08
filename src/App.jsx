@@ -5,6 +5,8 @@ import { SocketProvider } from './context/SocketContext';
 
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
+import ScrollToTop from './components/ScrollToTop';
+import ErrorBoundary from './components/ErrorBoundary';
 
 import Home from './pages/Home';
 import Properties from './pages/Properties';
@@ -54,40 +56,43 @@ function AppRoutes() {
 
   return (
     <div className="flex flex-col min-h-screen">
+      <ScrollToTop />
       <Navbar />
       <main className="flex-1">
-        <Routes>
-          {/* Public */}
-          <Route path="/" element={<Home />} />
-          <Route path="/properties" element={<Properties />} />
-          <Route path="/properties/:id" element={<PropertyDetail />} />
-          <Route path="/agents" element={<Agents />} />
-          <Route path="/agents/:id" element={<AgentDetail />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/verify-email" element={<VerifyEmail />} />
-          <Route path="/forgot-password" element={<ForgotPassword />} />
-          <Route path="/reset-password" element={<ResetPassword />} />
+        <ErrorBoundary>
+          <Routes>
+            {/* Public */}
+            <Route path="/" element={<Home />} />
+            <Route path="/properties" element={<Properties />} />
+            <Route path="/properties/:id" element={<PropertyDetail />} />
+            <Route path="/agents" element={<Agents />} />
+            <Route path="/agents/:id" element={<AgentDetail />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/verify-email" element={<VerifyEmail />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
 
-          {/* Protected — any logged in user */}
-          <Route path="/saved" element={<ProtectedRoute><SavedProperties /></ProtectedRoute>} />
-          <Route path="/inbox" element={<ProtectedRoute><Inbox /></ProtectedRoute>} />
-          <Route path="/chat/:id" element={<ProtectedRoute><ChatPage /></ProtectedRoute>} />
+            {/* Protected — any logged in user */}
+            <Route path="/saved" element={<ProtectedRoute><SavedProperties /></ProtectedRoute>} />
+            <Route path="/inbox" element={<ProtectedRoute><Inbox /></ProtectedRoute>} />
+            <Route path="/chat/:id" element={<ProtectedRoute><ChatPage /></ProtectedRoute>} />
 
-          {/* Agent */}
-          <Route path="/dashboard" element={<ProtectedRoute role="agent"><AgentDashboard /></ProtectedRoute>} />
-          <Route path="/dashboard/add" element={<ProtectedRoute role="agent"><AddProperty /></ProtectedRoute>} />
-          <Route path="/dashboard/edit/:id" element={<ProtectedRoute role="agent"><EditProperty /></ProtectedRoute>} />
-          <Route path="/dashboard/inquiries" element={<ProtectedRoute role="agent"><AgentInquiries /></ProtectedRoute>} />
+            {/* Agent */}
+            <Route path="/dashboard" element={<ProtectedRoute role="agent"><AgentDashboard /></ProtectedRoute>} />
+            <Route path="/dashboard/add" element={<ProtectedRoute role="agent"><AddProperty /></ProtectedRoute>} />
+            <Route path="/dashboard/edit/:id" element={<ProtectedRoute role="agent"><EditProperty /></ProtectedRoute>} />
+            <Route path="/dashboard/inquiries" element={<ProtectedRoute role="agent"><AgentInquiries /></ProtectedRoute>} />
 
-          {/* Admin */}
-          <Route path="/admin" element={<ProtectedRoute role="admin"><AdminDashboard /></ProtectedRoute>} />
-          <Route path="/admin/properties" element={<ProtectedRoute role="admin"><AdminProperties /></ProtectedRoute>} />
-          <Route path="/admin/users" element={<ProtectedRoute role="admin"><AdminUsers /></ProtectedRoute>} />
+            {/* Admin */}
+            <Route path="/admin" element={<ProtectedRoute role="admin"><AdminDashboard /></ProtectedRoute>} />
+            <Route path="/admin/properties" element={<ProtectedRoute role="admin"><AdminProperties /></ProtectedRoute>} />
+            <Route path="/admin/users" element={<ProtectedRoute role="admin"><AdminUsers /></ProtectedRoute>} />
 
-          {/* 404 */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+            {/* 404 */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </ErrorBoundary>
       </main>
       <Footer />
     </div>
